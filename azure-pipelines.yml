@@ -1,0 +1,26 @@
+# C/C++ with GCC
+# Build your C/C++ project with GCC using make.
+# Add steps that publish test results, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/c-cpp/gcc
+
+trigger:
+- master
+
+jobs:
+  - job: build_on_mac_os_x
+    pool:
+      vmImage: 'macOS-10.13'
+    steps:
+    - script: |
+        wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-macosx.tar.gz
+        tar xzf premake-5.0.0-alpha14-macosx.tar.gz
+      displayName: 'Fetching premake.'
+    - script: |
+        brew install `./premake5  mac-packages | tail -n1`
+      displayName: 'fetching operating system dependencies'
+    - script: |
+        ./premake5 setup
+      displayName: 'Setting up third party libraries'
+    - script: |
+        ./premake5 compile
+      displayName: 'compiling with XCode'
