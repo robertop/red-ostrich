@@ -11,4 +11,9 @@
  */
 @interface ViewController : NSViewController
 
+/**
+ * Adds a directory to the files outline view.
+ */
+- (void)addMainDirectory:(NSURL*)url;
+
 @end
