@@ -120,11 +120,11 @@ static NSMutableArray *leafNode = nil;
     return type == FS_DIRECTORY || type == FS_MAIN_DIRECTORY;
 }
 
-- (enum FileSystemTypes) getType {
+- (enum FileSystemTypes)getType {
     return type;
 }
 
-- (void)addChild:(FileSystemItem*)item {
+- (void)addChild:(FileSystemItem *)item {
     if (children == nil) {
         children = [[NSMutableArray alloc] init];
     }
@@ -143,7 +143,7 @@ static NSMutableArray *leafNode = nil;
     return self;
 }
 
-- (void)addProject:(FileSystemItem*) item {
+- (void)addProject:(FileSystemItem *)item {
     [self.projectTree addChild:item];
 }
 
@@ -207,11 +207,11 @@ static NSMutableArray *leafNode = nil;
     return cell;
 }
 
-- (BOOL)outlineView:(NSOutlineView *)outlineView shouldSelectItem:(id)item{
+- (BOOL)outlineView:(NSOutlineView *)outlineView shouldSelectItem:(id)item {
     return [item getType] != FS_PROJECTS_LIST;
 }
 
-- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item{
+- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item {
     return [item getType] == FS_PROJECTS_LIST;
 }
 

@@ -16,7 +16,9 @@ function macosxPackages()
     local pkgs = {
         "carthage"
     }
-
+    if os.getenv("CI") then
+        table.insert(pkgs, "clang-format")
+    end
     print(table.concat(pkgs, ' '))
 end
 

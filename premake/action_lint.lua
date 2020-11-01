@@ -21,12 +21,21 @@ function lint()
         -- now check the lua source code
         dofile('premake/blitwizard/checkstyle_patched.lua')
         local successLuaLint = lintlua()
-        if not successObjCLint or not successLuaLint then
+
+        if not successLintObjectiveC then
+            print("Objective C check completed with failures.")
+            os.exit(1);
+        end
+
+        if not successLuaLint then
+            print("Lua check completed with failures.")
             os.exit(1);
         end
     else
         print "Lint is not supported on this operating system.\n"
     end
+
+    os.exit(0)
 end
 
 function lintObjectiveC()
@@ -36,7 +45,7 @@ function lintObjectiveC()
     -- output of clang-format
     print("Checking Objective-C files ...")
     local successObjCLint = true
-    local objectiveCfiles = os.matchfiles('mac/mac-editor/**.c')
+    local objectiveCfiles = os.matchfiles('mac/mac-editor/**.m')
     for i, file in ipairs(objectiveCfiles) do
         local exitCode, result = lintObjectiveCFile(file)
         if exitCode > 0 then
@@ -54,7 +63,8 @@ function lintObjectiveC()
             print(result)
         end
     end
-    print("Objective C check complete.")
+
+    return successObjCLint;
 end
 
 function lintObjectiveCFile(file)
@@ -86,7 +96,6 @@ function lintlua()
     if styleerror then
         return false
     end
-    print("Lua check complete.")
     return true
 end
 
