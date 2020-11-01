@@ -5,7 +5,7 @@ on: [push]
 jobs:
   build:
     name: Mac Build
-    runs-on: macOS-10.14
+    runs-on: macOS-10.15
     steps:
     - uses: actions/checkout@v1
     - name: Fetching premake
