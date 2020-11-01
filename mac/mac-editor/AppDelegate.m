@@ -4,6 +4,7 @@
  */
 
 #import "AppDelegate.h"
+#import "ViewController.h"
 
 /*
  * The application delegate is where cocoa notifies us about UI or application
@@ -21,6 +22,23 @@
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
+}
+- (IBAction)onFolderOpen:(id)sender {
+    NSWindow* window = [NSApp mainWindow];
+    ViewController* viewController = (ViewController*) [window contentViewController];
+
+    NSOpenPanel* openPanel = [NSOpenPanel openPanel];
+    openPanel.canCreateDirectories = false;
+    openPanel.canChooseFiles = false;
+    openPanel.canChooseDirectories = true;
+    NSModalResponse response = [openPanel runModal];
+    if (response == NSModalResponseOK) {
+        NSArray* urls = [openPanel URLs];
+        NSURL* url = [urls firstObject];
+        if (url != nil) {
+            [viewController addMainDirectory:url];
+        }
+    }
 }
 
 @end

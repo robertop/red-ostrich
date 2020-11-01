@@ -58,7 +58,7 @@
     self.dataSource = [[FileSystemDataSource alloc] init];
     self.outlineView.dataSource = self.dataSource;
     self.outlineView.delegate = self.dataSource;
-    [self.outlineView expandItem:[self.outlineView itemAtRow:0]];
+    [self.outlineView expandItem: self.dataSource.projectTree];
     [NSNotificationCenter.defaultCenter addObserver:self
                                            selector:@selector(onItemWillExpand:)
                                                name:NSOutlineViewItemWillExpandNotification
@@ -86,20 +86,30 @@
 }
 
 - (void)onItemWillExpand:(NSNotification*)notification {
-    FileSystemItem* item = [notification.userInfo valueForKey:@"NSObject"];
-    if (item != nil) {
-        dispatch_async(dispatch_get_main_queue(), ^(void) {
-          // simulate background thread; this will be in a background thread later on
-          [FileSystemItem loadChildren:item];
-          NSMutableIndexSet* set = [[NSMutableIndexSet alloc] init];
-          for (int i = 0; i < [item numberOfChildren]; i++) {
-              [set addIndex:i];
-          }
-          [self.outlineView insertItemsAtIndexes:set
-                                        inParent:item
-                                   withAnimation:NSTableViewAnimationSlideDown];
-        });
+    if (notification.object != self.outlineView) {
+        return;
     }
+    FileSystemItem* item = [notification.userInfo valueForKey:@"NSObject"];
+    if (item == nil) {
+        return;
+    }
+    if (![item isKindOfClass:FileSystemItem.class]) {
+        return;
+    }
+}
+
+- (void)addMainDirectory:(NSURL *)url {
+    const char* root = [url fileSystemRepresentation];
+    NSString* rootString = [[NSFileManager defaultManager] stringWithFileSystemRepresentation:root length:strlen(root)];
+    FileSystemItem* newRootItem = [[FileSystemItem alloc] initWithMainDirectory:rootString];
+    [self.dataSource addProject:newRootItem];
+    [self.outlineView reloadData];
+    
+    NSMutableIndexSet* set = [[NSMutableIndexSet alloc] init];
+    [set addIndex:[self.outlineView rowForItem:newRootItem]];
+    [self.outlineView selectRowIndexes:set byExtendingSelection:NO];
+    [self.outlineView scrollRowToVisible:[set firstIndex]];
+    [self.outlineView expandItem:newRootItem];
 }
 
 @end

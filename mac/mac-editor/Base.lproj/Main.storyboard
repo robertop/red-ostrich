@@ -78,7 +78,11 @@
                                                 </items>
                                             </menu>
                                         </menuItem>
-                                        <menuItem title="Open Directory" keyEquivalent="O" id="t2j-Z9-eDg"/>
+                                        <menuItem title="Open Directory" keyEquivalent="O" id="t2j-Z9-eDg">
+                                            <connections>
+                                                <action selector="onFolderOpen:" target="Voe-Tx-rLC" id="41D-3t-5om"/>
+                                            </connections>
+                                        </menuItem>
                                         <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
                                         <menuItem title="Close" keyEquivalent="w" id="DVo-aG-piG">
                                             <connections>

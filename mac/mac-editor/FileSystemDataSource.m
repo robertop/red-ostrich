@@ -7,7 +7,6 @@
 
 @implementation FileSystemItem
 
-static FileSystemItem *rootItem = nil;
 static NSMutableArray *leafNode = nil;
 
 + (void)initialize {
@@ -16,30 +15,55 @@ static NSMutableArray *leafNode = nil;
     }
 }
 
-- (id)initWithPath:(NSString *)path parent:(FileSystemItem *)parentItem {
+- (id)initWithMainDirectory:(NSString *)path {
     self = [super init];
     if (self) {
         relativePath = [[path lastPathComponent] copy];
-        parent = parentItem;
-
-        NSString *fullPath = [self fullPath];
-        NSFileManager *fileManager = [NSFileManager defaultManager];
-        isValid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
+        rootPath = path;
+        parent = nil;
+        type = FS_MAIN_DIRECTORY;
+        children = [[NSMutableArray alloc] init];
     }
     return self;
 }
 
-+ (FileSystemItem *)rootItem {
-    if (rootItem == nil) {
-        rootItem = [[FileSystemItem alloc] initWithPath:@"/" parent:nil];
-        [FileSystemItem loadChildren:rootItem];
+- (id)initWithPathAndParent:(NSString *)path parent:(FileSystemItem *)parentItem {
+    self = [super init];
+    if (self) {
+        relativePath = [[path lastPathComponent] copy];
+        parent = parentItem;
+        rootPath = nil;
+        type = FS_FILE;
+
+        NSString *fullPath = [self fullPath];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        BOOL isValid = false;
+        BOOL isDir = false;
+        isValid = [fileManager fileExistsAtPath:fullPath isDirectory:&isDir];
+        if (isValid && isDir) {
+            type = FS_DIRECTORY;
+        }
     }
-    return rootItem;
+    return self;
+}
+
+- (id)initWithProjectsList {
+    self = [super init];
+    if (self) {
+        type = FS_PROJECTS_LIST;
+        relativePath = @"Directories";
+        parent = nil;
+        children = [[NSMutableArray alloc] init];
+    }
+    return self;
 }
 
 + (NSMutableArray *)loadChildren:(FileSystemItem *)item {
     NSMutableArray *children;
     if (item == nil) {
+        return children;
+    }
+    if (item->type == FS_PROJECTS_LIST) {
         return children;
     }
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -54,7 +78,7 @@ static NSMutableArray *leafNode = nil;
 
         for (i = 0; i < numChildren; i++) {
             FileSystemItem *newChild =
-                [[FileSystemItem alloc] initWithPath:[array objectAtIndex:i] parent:item];
+                [[FileSystemItem alloc] initWithPathAndParent:[array objectAtIndex:i] parent:item];
             [children addObject:newChild];
         }
         [children sortUsingComparator:^NSComparisonResult(id a, id b) {
@@ -72,9 +96,11 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (NSString *)fullPath {
-    // If no parent, return our own relative path
-    if (parent == nil) {
-        return relativePath;
+    if (type == FS_MAIN_DIRECTORY) {
+        return rootPath;
+    }
+    if (type == FS_PROJECTS_LIST) {
+        return @"Projects";
     }
 
     // recurse up the hierarchy, prepending each parent’s path
@@ -91,23 +117,64 @@ static NSMutableArray *leafNode = nil;
 }
 
 - (BOOL)isValidDir {
-    return isValid && isDir;
+    return type == FS_DIRECTORY || type == FS_MAIN_DIRECTORY;
+}
+
+- (enum FileSystemTypes) getType {
+    return type;
+}
+
+- (void)addChild:(FileSystemItem*)item {
+    if (children == nil) {
+        children = [[NSMutableArray alloc] init];
+    }
+    [children addObject:item];
 }
 
 @end
 
 @implementation FileSystemDataSource
 
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        self.projectTree = [[FileSystemItem alloc] initWithProjectsList];
+    }
+    return self;
+}
+
+- (void)addProject:(FileSystemItem*) item {
+    [self.projectTree addChild:item];
+}
+
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item {
-    return (item == nil) ? 1 : [item numberOfChildren];
+    if (item == nil) {
+        return 1;
+    }
+    // TODO(roberto): this is a file system operation and may block; not sure how to
+    // re-architect the code to prevent UI freezes.
+    [FileSystemItem loadChildren:item];
+    return [item numberOfChildren];
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item {
-    return (item == nil) ? YES : ([item isValidDir]);
+    if (item == nil) {
+        return YES;
+    }
+    if ([item getType] == FS_PROJECTS_LIST) {
+        return [item numberOfChildren] >= 0;
+    }
+    // TODO(roberto): this is a file system operation and may block; not sure how to
+    // re-architect the code to prevent UI freezes.
+    [FileSystemItem loadChildren:item];
+    return [item isValidDir];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item {
-    return (item == nil) ? [FileSystemItem rootItem] : [(FileSystemItem *)item childAtIndex:index];
+    // TODO(roberto): this is a file system operation and may block; not sure how to
+    // re-architect the code to prevent UI freezes.
+    [FileSystemItem loadChildren:item];
+    return (item == nil) ? self.projectTree : [(FileSystemItem *)item childAtIndex:index];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView
@@ -125,12 +192,12 @@ static NSMutableArray *leafNode = nil;
      viewForTableColumn:(NSTableColumn *)tableColumn
                    item:(id)item {
     NSTableCellView *cell;
-    if (item == nil) {
+    if ([item getType] == FS_PROJECTS_LIST) {
         cell = [outlineView makeViewWithIdentifier:@"HeaderCell" owner:self];
-        cell.textField.stringValue = @"Files";
+        cell.textField.stringValue = [item relativePath];
     } else {
         cell = [outlineView makeViewWithIdentifier:@"DataCell" owner:self];
-        if ([item isValidDir] || item == [FileSystemItem rootItem]) {
+        if ([item isValidDir] || [item getType] == FS_MAIN_DIRECTORY) {
             cell.imageView.image = [NSImage imageNamed:NSImageNameFolder];
         } else {
             cell.imageView.image = [NSImage imageNamed:NSImageNameMultipleDocuments];
@@ -138,6 +205,14 @@ static NSMutableArray *leafNode = nil;
         cell.textField.stringValue = [item relativePath];
     }
     return cell;
+}
+
+- (BOOL)outlineView:(NSOutlineView *)outlineView shouldSelectItem:(id)item{
+    return [item getType] != FS_PROJECTS_LIST;
+}
+
+- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item{
+    return [item getType] == FS_PROJECTS_LIST;
 }
 
 @end
