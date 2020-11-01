@@ -18,3 +18,16 @@ jobs:
       run: ./premake5 setup
     - name: Compiling with XCode
       run: ./premake5 compile
+  lint:
+    name: Source code Linter
+    runs-on: macOS-10.15
+    steps:
+    - uses: actions/checkout@v1
+    - name: Fetching premake
+      run: |
+        wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-macosx.tar.gz
+        tar xzf premake-5.0.0-alpha14-macosx.tar.gz
+    - name: Fetching operating system dependencies
+      run: brew install `./premake5  mac-packages | tail -n1`
+    - name: Linting files
+      run: ./premake5 lint

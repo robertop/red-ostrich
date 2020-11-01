@@ -18,14 +18,14 @@
 
 @implementation AppDelegate
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+- (void)applicationDidFinishLaunching:(NSNotification*)aNotification {
 }
 
-- (void)applicationWillTerminate:(NSNotification *)aNotification {
+- (void)applicationWillTerminate:(NSNotification*)aNotification {
 }
 - (IBAction)onFolderOpen:(id)sender {
     NSWindow* window = [NSApp mainWindow];
-    ViewController* viewController = (ViewController*) [window contentViewController];
+    ViewController* viewController = (ViewController*)[window contentViewController];
 
     NSOpenPanel* openPanel = [NSOpenPanel openPanel];
     openPanel.canCreateDirectories = false;

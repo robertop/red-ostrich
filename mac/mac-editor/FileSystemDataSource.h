@@ -57,7 +57,7 @@ enum FileSystemTypes { FS_DIRECTORY, FS_FILE, FS_PROJECTS_LIST, FS_MAIN_DIRECTOR
  * is a SourceList UI control. The source list UI control has custom data cells that
  * cocoa does not know how to display.
  */
-@interface FileSystemDataSource : NSObject<NSOutlineViewDataSource, NSOutlineViewDelegate>
+@interface FileSystemDataSource : NSObject <NSOutlineViewDataSource, NSOutlineViewDelegate>
 
 /**
  * The projects list. You can add items here  and they will be displayed in the directories list.
@@ -67,7 +67,7 @@ enum FileSystemTypes { FS_DIRECTORY, FS_FILE, FS_PROJECTS_LIST, FS_MAIN_DIRECTOR
 /**
  * Initialize the data source.
  */
--(instancetype)init;
+- (instancetype)init;
 
 /**
  * Add a project to the files list. Once added, the caller needs to reload the

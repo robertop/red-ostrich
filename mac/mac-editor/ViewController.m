@@ -58,7 +58,7 @@
     self.dataSource = [[FileSystemDataSource alloc] init];
     self.outlineView.dataSource = self.dataSource;
     self.outlineView.delegate = self.dataSource;
-    [self.outlineView expandItem: self.dataSource.projectTree];
+    [self.outlineView expandItem:self.dataSource.projectTree];
     [NSNotificationCenter.defaultCenter addObserver:self
                                            selector:@selector(onItemWillExpand:)
                                                name:NSOutlineViewItemWillExpandNotification
@@ -98,13 +98,15 @@
     }
 }
 
-- (void)addMainDirectory:(NSURL *)url {
+- (void)addMainDirectory:(NSURL*)url {
     const char* root = [url fileSystemRepresentation];
-    NSString* rootString = [[NSFileManager defaultManager] stringWithFileSystemRepresentation:root length:strlen(root)];
+    NSString* rootString =
+        [[NSFileManager defaultManager] stringWithFileSystemRepresentation:root
+                                                                    length:strlen(root)];
     FileSystemItem* newRootItem = [[FileSystemItem alloc] initWithMainDirectory:rootString];
     [self.dataSource addProject:newRootItem];
     [self.outlineView reloadData];
-    
+
     NSMutableIndexSet* set = [[NSMutableIndexSet alloc] init];
     [set addIndex:[self.outlineView rowForItem:newRootItem]];
     [self.outlineView selectRowIndexes:set byExtendingSelection:NO];
